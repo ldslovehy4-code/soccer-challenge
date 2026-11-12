@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>축구 미션 챌린지 - 특수체육</title>
+    <!-- Tailwind CSS loaded from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@500;700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0fdf4;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .title-font {
+            font-family: 'Gmarket Sans', 'Noto Sans KR', sans-serif;
+        }
+        /* Custom high-contrast shadows and buttons */
+        .btn-touch {
+            min-height: 64px;
+            min-width: 64px;
+            touch-action: manipulation;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.2);
+            transition: all 0.1s ease;
+        }
+        .btn-touch:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+        
+        /* 1단계: 사람과 사람 사이에서만 정확히 왕복하는 패스 애니메이션 */
+        @keyframes passBetweenPeople {
+            0% { transform: translateX(0px); }
+            50% { transform: translateX(180px); }
+            100% { transform: translateX(0px); }
+        }
+        .anim-pass-ball {
+            animation: passBetweenPeople 2.2s infinite ease-in-out;
+        }
+
+        /* Modal Pop-in */
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Confetti effect */
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #f00;
+            animation: confettiFall 3s infinite linear;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between p-2 sm:p-4 max-w-4xl mx-auto">
+
+    <!-- Header Navigation & Teacher Mode Button -->
+    <header class="bg-emerald-600 text-white rounded-3xl p-4 shadow-lg flex justify-between items-center mb-4 border-b-4 border-emerald-800">
+        <div class="flex items-center space-x-3">
+            <span class="text-3xl sm:text-4xl">⚽</span>
+            <div>
+                <h1 class="text-xl sm:text-3xl font-black title-font tracking-wide">축구 미션 왕!</h1>
+                <p class="text-xs sm:text-sm text-emerald-100 font-bold">스스로 도전하고 스스로 체크해요</p>
+            </div>
+        </div>
+        <button onclick="openTeacherAuthModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-black px-4 py-3 rounded-2xl text-base sm:text-lg border-2 border-amber-600 btn-touch flex items-center gap-1">
+            <span>📋</span>
+            <span>교사 기록</span>
+        </button>
+    </header>
+
+    <!-- Step Progress Bar -->
+    <nav class="mb-4 bg-white p-3 rounded-2xl shadow-md border-2 border-emerald-200">
+        <div class="flex justify-between items-center text-center font-bold text-sm sm:text-lg">
+            <div id="step-tab-0" class="flex-1 py-2 rounded-xl bg-emerald-500 text-white shadow">학생 등록</div>
+            <div class="text-gray-400 mx-1">➔</div>
+            <div id="step-tab-1" class="flex-1 py-2 rounded-xl bg-gray-200 text-gray-500">1단계: 패스</div>
+            <div class="text-gray-400 mx-1">➔</div>
+            <div id="step-tab-2" class="flex-1 py-2 rounded-xl bg-gray-200 text-gray-500">2단계: 드리블</div>
+            <div class="text-gray-400 mx-1">➔</div>
+            <div id="step-tab-3" class="flex-1 py-2 rounded-xl bg-gray-200 text-gray-500">3단계: 슛</div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-grow flex flex-col justify-center">
+
+        <!-- ==================== 0단계: 학생 정보 입력 ==================== -->
+        <section id="step-0" class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border-4 border-emerald-400 text-center flex flex-col items-center">
+            <div class="inline-block bg-emerald-100 text-emerald-800 font-black text-xl sm:text-2xl px-5 py-2 rounded-full mb-4">
+                📝 학생 정보 입력
+            </div>
+            <p class="text-base sm:text-xl text-gray-700 font-bold mb-6">
+                도전하기 전에 학번과 이름을 입력해주세요!
+            </p>
+
+            <div class="w-full max-w-md bg-emerald-50 rounded-2xl p-6 border-2 border-emerald-200 mb-6 space-y-4 text-left">
+                <div>
+                    <label for="student-id-input" class="block font-black text-slate-700 text-lg mb-1">학번 (예: 1학년 2반 3번 ➔ 1203)</label>
+                    <input type="text" id="student-id-input" placeholder="학번 입력" class="w-full text-xl font-bold p-4 rounded-xl border-2 border-emerald-300 focus:outline-none focus:border-emerald-500 bg-white">
+                </div>
+                <div>
+                    <label for="student-name-input" class="block font-black text-slate-700 text-lg mb-1">이름</label>
+                    <input type="text" id="student-name-input" placeholder="이름 입력" class="w-full text-xl font-bold p-4 rounded-xl border-2 border-emerald-300 focus:outline-none focus:border-emerald-500 bg-white">
+                </div>
+            </div>
+
+            <button onclick="submitStudentInfo()" class="w-full max-w-md bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl py-5 rounded-2xl border-b-4 border-emerald-700 btn-touch flex items-center justify-center gap-2">
+                <span>🚀 도전 시작하기!</span>
+            </button>
+        </section>
+
+        <!-- ==================== 1단계: 패스 미션 ==================== -->
+        <section id="step-1" class="hidden bg-white rounded-3xl p-4 sm:p-6 shadow-xl border-4 border-emerald-400 text-center flex flex-col items-center">
+            <div class="inline-block bg-emerald-100 text-emerald-800 font-black text-lg sm:text-2xl px-4 py-1 rounded-full mb-3">
+                🤝 1단계 미션: 정확한 제자리 패스 (10회)
+            </div>
+            <p class="text-base sm:text-xl text-gray-700 font-bold mb-4">
+                친구가 이동하지 않고 제자리에서 잡을 수 있게 패스하세요!<br>
+                <span class="text-emerald-600 underline">10번 중 8번 이상</span> 성공해야 통과입니다.
+            </p>
+
+            <!-- 1단계 패스 애니메이션 SVG 예시 카드 -->
+            <div class="w-full max-w-md bg-emerald-50 rounded-2xl p-4 mb-4 border-2 border-emerald-200 shadow-sm flex flex-col items-center">
+                <div class="text-sm font-black text-emerald-800 mb-2 flex items-center gap-1">
+                    <span>💡 동작 예시 (파란 친구 ↔ 빨간 친구 패스)</span>
+                </div>
+                <div class="w-full bg-white rounded-xl p-2 border border-emerald-200 relative h-28 flex justify-between items-center px-4 overflow-hidden">
+                    <!-- 파란색 친구 (왼쪽) -->
+                    <div class="flex flex-col items-center z-10">
+                        <svg width="45" height="55" viewBox="0 0 40 50">
+                            <circle cx="20" cy="12" r="10" fill="#3b82f6"/>
+                            <rect x="12" y="22" width="16" height="25" fill="#1d4ed8" rx="3"/>
+                        </svg>
+                        <span class="text-xs font-bold text-blue-600 mt-1">친구 A</span>
+                    </div>
+
+                    <!-- 패스 경로 (가운데 공 움직임) -->
+                    <div class="flex-grow relative h-full flex items-center mx-2">
+                        <div class="w-full border-b-2 border-dashed border-emerald-300 absolute"></div>
+                        <div class="anim-pass-ball z-20">
+                            <svg width="28" height="28" viewBox="0 0 28 28">
+                                <circle cx="14" cy="14" r="12" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+                                <polygon points="14,6 8,11 10,18 18,18 20,11" fill="#000000"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 빨간색 친구 (오른쪽) -->
+                    <div class="flex flex-col items-center z-10">
+                        <svg width="45" height="55" viewBox="0 0 40 50">
+                            <circle cx="20" cy="12" r="10" fill="#ef4444"/>
+                            <rect x="12" y="22" width="16" height="25" fill="#b91c1c" rx="3"/>
+                        </svg>
+                        <span class="text-xs font-bold text-red-600 mt-1">친구 B</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instant Feedback Banner -->
+            <div id="pass-feedback-banner" class="h-8 font-black text-lg mb-2 text-emerald-600 transition-all"></div>
+
+            <!-- Counters and Status -->
+            <div class="w-full max-w-md bg-amber-50 rounded-2xl p-4 border-2 border-amber-300 mb-6">
+                <div class="flex justify-around items-center mb-2">
+                    <div>
+                        <div class="text-gray-500 text-sm font-bold">성공한 패스</div>
+                        <div id="pass-success-count" class="text-4xl sm:text-6xl font-black text-emerald-600">0</div>
+                    </div>
+                    <div class="text-3xl text-gray-300 font-black">/</div>
+                    <div>
+                        <div class="text-gray-500 text-sm font-bold">전체 시도</div>
+                        <div id="pass-total-count" class="text-4xl sm:text-6xl font-black text-slate-700">0</div>
+                    </div>
+                </div>
+                <div class="text-xs sm:text-sm text-gray-500 font-bold">목표: 10번 중 8번 이상 성공!</div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-4 w-full max-w-md">
+                <button onclick="addPassScore(true)" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl sm:text-2xl py-4 rounded-2xl border-b-4 border-emerald-700 btn-touch flex flex-col items-center justify-center">
+                    <span>👍 성공! (+1)</span>
+                </button>
+                <button onclick="addPassScore(false)" class="flex-1 bg-slate-300 hover:bg-slate-400 text-slate-700 font-black text-xl sm:text-2xl py-4 rounded-2xl border-b-4 border-slate-500 btn-touch flex flex-col items-center justify-center">
+                    <span>❌ 실패 (+0)</span>
+                </button>
+            </div>
+            
+            <button onclick="resetStep1()" class="mt-4 text-gray-400 underline font-bold text-sm">
+                🔄 처음부터 다시 세기
+            </button>
+        </section>
+
+
+        <!-- ==================== 2단계: 드리블 미션 ==================== -->
+        <section id="step-2" class="hidden bg-white rounded-3xl p-4 sm:p-6 shadow-xl border-4 border-blue-400 text-center flex flex-col items-center">
+            <div class="inline-block bg-blue-100 text-blue-800 font-black text-lg sm:text-2xl px-4 py-1 rounded-full mb-3">
+                🏃 2단계 미션: 지그재그 드리블 (15초)
+            </div>
+            <p class="text-base sm:text-xl text-gray-700 font-bold mb-4">
+                고깔 6개 사이사이를 건드리지 않고 지그재그로 돌아오세요!<br>
+                <span class="text-blue-600 underline">15초 안에</span> 들어와야 성공입니다.
+            </p>
+
+            <!-- [독립 툴 1] 예시 그림 전용 카드로 분리 (일렬 고깔 + 지그재그 점선 경로) -->
+            <div class="w-full max-w-md bg-sky-50 rounded-2xl p-4 mb-4 border-2 border-sky-300 shadow-sm flex flex-col items-center">
+                <div class="text-sm font-black text-sky-800 mb-2 flex items-center gap-1">
+                    <span>💡 동작 예시 (일렬 고깔 사이 지그재그 이동 경로)</span>
+                </div>
+                <div class="w-full bg-white rounded-xl p-3 border border-sky-200 relative h-36 flex justify-center items-center overflow-hidden">
+                    <svg width="360" height="120" viewBox="0 0 360 120" class="w-full">
+                        <!-- 지그재그 이동 경로 (6개 고깔 사이사이를 모두 거치는 촘촘한 점선) -->
+                        <path d="M 10 95 L 35 25 L 60 95 L 90 25 L 120 95 L 150 25 L 180 95 L 210 25 L 240 95 L 270 25 L 300 95 L 325 25 L 350 95" fill="none" stroke="#0284c7" stroke-width="4" stroke-dasharray="6,4"/>
+
+                        <!-- 시작 축구공 표시 -->
+                        <g transform="translate(10, 95)">
+                            <circle cx="0" cy="0" r="10" fill="#ffffff" stroke="#000000" stroke-width="2"/>
+                            <polygon points="0,-5 -4,-1 -2,4 2,4 4,-1" fill="#000000"/>
+                        </g>
+
+                        <!-- 일렬 배치된 6개의 고깔 (정확히 정렬) -->
+                        <polygon points="35,45 26,75 44,75" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+                        <polygon points="90,45 81,75 99,75" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+                        <polygon points="150,45 141,75 159,75" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+                        <polygon points="210,45 201,75 219,75" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+                        <polygon points="270,45 261,75 279,75" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+                        <polygon points="325,45 316,75 334,75" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- [독립 툴 2] 타이머 및 측정 컨트롤 전용 카드로 분리 -->
+            <div class="w-full max-w-md bg-amber-50 rounded-2xl p-5 border-2 border-amber-300 shadow-sm flex flex-col items-center">
+                <div class="text-gray-600 text-base font-black mb-1">⏱️ 남은 시간 측정</div>
+                <div id="dribble-timer-display" class="text-6xl sm:text-7xl font-black text-blue-600 font-mono tracking-wider my-2">15.0</div>
+                <div class="text-xs sm:text-sm text-gray-500 font-bold mb-4">시작 버튼을 누르고 도착 후 정지 버튼을 누르세요!</div>
+
+                <!-- Control Buttons inside Timer Box -->
+                <div class="flex gap-2 w-full">
+                    <button id="btn-toggle-timer" onclick="toggleDribbleTimer()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black text-xl sm:text-2xl py-5 rounded-2xl border-b-4 border-amber-700 btn-touch flex items-center justify-center gap-2">
+                        <span>▶️ 타이머 시작</span>
+                    </button>
+                    <button onclick="resetDribbleTimer()" class="bg-gray-400 hover:bg-gray-500 text-white font-black text-lg px-4 py-4 rounded-2xl border-b-4 border-gray-600 btn-touch">
+                        <span>🔄 리셋</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== 3단계: 슛 미션 ==================== -->
+        <section id="step-3" class="hidden bg-white rounded-3xl p-4 sm:p-6 shadow-xl border-4 border-purple-400 text-center flex flex-col items-center">
+            <div class="inline-block bg-purple-100 text-purple-800 font-black text-lg sm:text-2xl px-4 py-1 rounded-full mb-3">
+                🥅 3단계 미션: 턴 슛 (총 5회)
+            </div>
+            <!-- Updated Request Text -->
+            <p class="text-base sm:text-xl text-gray-700 font-bold mb-3">
+                골대 등지고 드리블하다가 휘슬이 울리면 뒤돌아 슛!<br>
+                <span class="text-purple-600 underline">5번 중에 3번 이상</span> 넣어야 성공!
+            </p>
+
+            <!-- Visual Goal & Whistle -->
+            <div class="w-full max-w-md bg-purple-50 rounded-2xl p-4 mb-4 border-2 border-purple-200 flex justify-around items-center h-28 relative overflow-hidden">
+                <!-- Mini Goal SVG -->
+                <svg width="80" height="70" viewBox="0 0 80 70">
+                    <rect x="5" y="10" width="70" height="55" fill="none" stroke="#4b5563" stroke-width="4"/>
+                    <path d="M5,10 L75,10 M5,25 L75,25 M5,40 L75,40 M5,55 L75,55 M20,10 L20,65 M40,10 L40,65 M60,10 L60,65" stroke="#cbd5e1" stroke-width="1.5"/>
+                </svg>
+                <!-- Animated Whistle Icon -->
+                <div id="whistle-visual" class="text-4xl transition-transform duration-200">
+                    🎷🔊
+                </div>
+                <span class="text-3xl">⚽</span>
+            </div>
+
+            <!-- Whistle Launcher Button -->
+            <div class="w-full max-w-md mb-4">
+                <button id="btn-whistle-wait" onclick="prepareWhistle()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xl sm:text-2xl py-4 rounded-2xl border-b-4 border-indigo-900 btn-touch flex items-center justify-center gap-2">
+                    <span>📢 준비 및 휘슬 대기 (3~15초 랜덤)</span>
+                </button>
+                <div id="whistle-status-text" class="text-base font-bold text-indigo-600 mt-2 h-7">
+                    "준비 및 휘슬 대기"를 누르고 삐익- 소리를 기다리세요!
+                </div>
+            </div>
+
+            <!-- Instant Feedback Banner -->
+            <div id="shoot-feedback-banner" class="h-8 font-black text-lg mb-1 text-purple-600 transition-all"></div>
+
+            <!-- Score Counters -->
+            <div class="w-full max-w-md bg-purple-50 rounded-2xl p-4 border-2 border-purple-300 mb-4">
+                <div class="flex justify-around items-center mb-1">
+                    <div>
+                        <div class="text-gray-500 text-sm font-bold">골 성공</div>
+                        <div id="shoot-success-count" class="text-4xl sm:text-6xl font-black text-purple-600">0</div>
+                    </div>
+                    <div class="text-3xl text-gray-300 font-black">/</div>
+                    <div>
+                        <div class="text-gray-500 text-sm font-bold">전체 시도</div>
+                        <div id="shoot-total-count" class="text-4xl sm:text-6xl font-black text-slate-700">0</div>
+                    </div>
+                </div>
+                <div class="text-xs sm:text-sm text-gray-500 font-bold">목표: 5번 중 3번 이상 골!</div>
+            </div>
+
+            <!-- Action Buttons for Shoot -->
+            <div class="flex gap-4 w-full max-w-md">
+                <button onclick="addShootScore(true)" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black text-xl sm:text-2xl py-4 rounded-2xl border-b-4 border-purple-900 btn-touch flex flex-col items-center justify-center">
+                    <span>⚽ 골 성공! (+1)</span>
+                </button>
+                <button onclick="addShootScore(false)" class="flex-1 bg-slate-300 hover:bg-slate-400 text-slate-700 font-black text-xl sm:text-2xl py-4 rounded-2xl border-b-4 border-slate-500 btn-touch flex flex-col items-center justify-center">
+                    <span>❌ 노골 (+0)</span>
+                </button>
+            </div>
+
+            <button onclick="resetStep3()" class="mt-4 text-gray-400 underline font-bold text-sm">
+                🔄 처음부터 다시 세기
+            </button>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-4 text-center text-xs sm:text-sm text-emerald-800 font-bold py-2">
+        특수체육 맞춤형 축구 수행평가 웹앱 ⓒ Special Physical Education
+    </footer>
+
+
+    <!-- ==================== POPUP MODALS ==================== -->
+
+    <!-- 1. TRY AGAIN MODAL (다시 도전!) -->
+    <div id="modal-retry" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-4 border-amber-400 pop-in flex flex-col items-center">
+            <div class="w-28 h-28 mb-4 bg-amber-100 rounded-full flex items-center justify-center border-4 border-amber-300">
+                <svg width="70" height="70" viewBox="0 0 100 100">
+                    <path d="M50 5 L63 35 L95 38 L71 60 L78 92 L50 75 L22 92 L29 60 L5 38 L37 35 Z" fill="#fbbf24" stroke="#d97706" stroke-width="3"/>
+                </svg>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-black text-amber-600 mb-2 title-font">아쉬워요! 다시 도전! 💪</h2>
+            <p id="retry-modal-msg" class="text-lg text-gray-700 font-bold mb-6">
+                조금만 더 힘내면 할 수 있어요!<br>다시 한 번 도전해 볼까요?
+            </p>
+            <button onclick="closeRetryModal()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-black text-2xl py-4 rounded-2xl border-b-4 border-amber-700 btn-touch">
+                다시 시작하기 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. FAIL MODAL (실패! 운동장 한바퀴 뛰고오기!) -->
+    <div id="modal-fail" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-4 border-red-500 pop-in flex flex-col items-center">
+            <div class="w-full bg-rose-50 rounded-2xl p-4 mb-4 border-2 border-rose-200 flex justify-center items-center">
+                <svg width="220" height="110" viewBox="0 0 220 110">
+                    <rect x="10" y="10" width="200" height="90" rx="45" fill="#e11d48" stroke="#9f1239" stroke-width="4"/>
+                    <rect x="35" y="35" width="150" height="40" rx="20" fill="#22c55e" stroke="#15803d" stroke-width="3"/>
+                    <path d="M 110 10 L 110 35 M 110 75 L 110 100" stroke="#ffffff" stroke-width="3" stroke-dasharray="4"/>
+                    <text x="95" y="62" font-size="28">🏃</text>
+                </svg>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-black text-red-600 mb-2 title-font">실패! 🏃‍♂️</h2>
+            <div class="bg-red-100 text-red-900 rounded-2xl p-4 w-full mb-6 font-black text-xl sm:text-2xl border-2 border-red-300">
+                🏃‍♀️ 운동장 한바퀴 뛰고오기! 🏃‍♂️
+            </div>
+            <button onclick="closeFailModal()" class="w-full bg-red-500 hover:bg-red-600 text-white font-black text-2xl py-4 rounded-2xl border-b-4 border-red-700 btn-touch">
+                확인 (다시 도전하기) 🔁
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. ALL CLEAR FINAL SUCCESS MODAL -->
+    <div id="modal-clear" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="confetti" style="left:10%; animation-delay:0s; background:#ef4444;"></div>
+        <div class="confetti" style="left:30%; animation-delay:0.5s; background:#3b82f6;"></div>
+        <div class="confetti" style="left:50%; animation-delay:0.2s; background:#eab308;"></div>
+        <div class="confetti" style="left:70%; animation-delay:0.7s; background:#10b981;"></div>
+        <div class="confetti" style="left:90%; animation-delay:0.4s; background:#ec4899;"></div>
+
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-4 border-yellow-400 pop-in flex flex-col items-center relative z-10">
+            <div class="text-6xl mb-2">🏆</div>
+            <h2 class="text-3xl sm:text-4xl font-black text-emerald-600 mb-2 title-font">축하합니다! ✨</h2>
+            <p class="text-xl font-bold text-gray-800 mb-4">
+                모든 축구 미션을 통과했어요!<br>당신은 멋진 축구왕! ⚽👑
+            </p>
+            <div class="bg-amber-50 rounded-2xl p-4 w-full mb-6 border-2 border-amber-200 text-left font-bold text-sm sm:text-base space-y-1">
+                <div>✔️ 1단계 패스 통과!</div>
+                <div>✔️ 2단계 드리블 통과!</div>
+                <div>✔️ 3단계 슛 미션 통과!</div>
+                <div class="text-emerald-600 font-black mt-2">📝 기록이 교사 수첩에 저장되었습니다.</div>
+            </div>
+            <button onclick="resetAllToStep1()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-2xl py-4 rounded-2xl border-b-4 border-emerald-700 btn-touch">
+                처음부터 다시하기 🔄
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. TEACHER AUTH & RECORD MODAL -->
+    <div id="modal-teacher" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border-4 border-emerald-500 pop-in max-h-[90vh] flex flex-col">
+            
+            <div id="teacher-auth-view" class="text-center py-4">
+                <h3 class="text-2xl font-black text-slate-800 mb-4">🔒 교사 인증</h3>
+                <p class="text-gray-600 font-bold mb-4">비밀번호를 입력하세요 (기본: 1234)</p>
+                <input type="password" id="teacher-pass-input" class="border-4 border-emerald-300 rounded-2xl px-4 py-3 text-2xl text-center font-bold w-48 mb-4 focus:outline-none focus:border-emerald-500" placeholder="****">
+                <div class="flex gap-2 justify-center">
+                    <button onclick="checkTeacherPassword()" class="bg-emerald-500 text-white font-black text-xl px-6 py-3 rounded-xl btn-touch">확인</button>
+                    <button onclick="closeTeacherModal()" class="bg-gray-300 text-slate-700 font-black text-xl px-6 py-3 rounded-xl btn-touch">취소</button>
+                </div>
+            </div>
+
+            <div id="teacher-dashboard-view" class="hidden flex-col h-full">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 class="text-2xl font-black text-emerald-800">📋 학생 수행 기록표</h3>
+                    <div class="flex items-center gap-2">
+                        <button onclick="clearRecords()" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-3 py-2 rounded-xl text-xs sm:text-sm btn-touch flex items-center gap-1 shadow">
+                            🗑️ 전체 기록 리셋
+                        </button>
+                        <button onclick="closeTeacherModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-black px-2">✕</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto flex-grow mb-3 border rounded-xl bg-white shadow-inner">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-emerald-100 text-emerald-900 border-b">
+                                <th class="p-2 sm:p-3">일시</th>
+                                <th class="p-2 sm:p-3">학생명/번호</th>
+                                <th class="p-2 sm:p-3">단계</th>
+                                <th class="p-2 sm:p-3">결과</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-records-table">
+                            <!-- JS injected rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 페이지네이션 컨트롤 (이전 / 다음) -->
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded-xl border mb-3">
+                    <button id="btn-prev-page" onclick="changeRecordPage(-1)" class="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white font-bold px-4 py-2 rounded-lg text-sm btn-touch">
+                        ◀ 이전
+                    </button>
+                    <span id="record-page-info" class="font-bold text-gray-700 text-sm">1 / 1 페이지</span>
+                    <button id="btn-next-page" onclick="changeRecordPage(1)" class="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 text-white font-bold px-4 py-2 rounded-lg text-sm btn-touch">
+                        다음 ▶
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-2 justify-between items-center">
+                    <button onclick="exportRecordsCSV()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-3 rounded-xl text-sm btn-touch flex items-center gap-1">📥 CSV 다운로드</button>
+                    <button onclick="closeTeacherModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold px-6 py-3 rounded-xl text-sm btn-touch">닫기</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+    <script>
+        /* ================= Audio Context (Web Audio API) ================= */
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioCtx();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Sound 1: Quick Success Click Sound (Positive Tone)
+        function playSuccessTone() {
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, now); // D5
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+
+        // Sound 2: All Stage Clear Sound (Fanfare)
+        function playSuccessSound() {
+            initAudio();
+            const now = audioCtx.currentTime;
+            const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            freqs.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.35);
+            });
+        }
+
+        // Sound 3: Improved Fail Sound (Intuitive 2-tone warning)
+        function playFailSound() {
+            initAudio();
+            const now = audioCtx.currentTime;
+            
+            // Tone 1: High buzz
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(280, now);
+            gain1.gain.setValueAtTime(0.3, now);
+            gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.25);
+
+            // Tone 2: Low drop buzz
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(160, now + 0.25);
+            gain2.gain.setValueAtTime(0.3, now + 0.25);
+            gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start(now + 0.25);
+            osc2.stop(now + 0.65);
+        }
+
+        // Sound 4: Realistic Whistle Sound ("삐익-!")
+        function playWhistleSound() {
+            initAudio();
+            const now = audioCtx.currentTime;
+            
+            // Dual Frequency Whistle Synthesizer
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc1.type = 'sine';
+            osc2.type = 'triangle';
+
+            // High pitch whistles with vibration
+            osc1.frequency.setValueAtTime(2600, now);
+            osc2.frequency.setValueAtTime(2850, now);
+
+            // Tremolo / Trill LFO
+            const lfo = audioCtx.createOscillator();
+            lfo.frequency.value = 30; // 30Hz fast whistle vibrato
+            const lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = 180;
+            lfo.connect(osc1.frequency);
+            lfo.connect(osc2.frequency);
+            lfo.start(now);
+            lfo.stop(now + 1.2);
+
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + 1.2);
+            osc2.stop(now + 1.2);
+        }
+
+
+        /* ================= App State ================= */
+        let currentStep = 0;
+        let studentId = "";
+        let studentName = "";
+
+        // Teacher Records Pagination State
+        let currentRecordPage = 1;
+        const recordsPerPage = 6;
+
+        // Step 1 State
+        let passSuccess = 0;
+        let passTotal = 0;
+
+        // Step 2 State
+        let dribbleTimer = null;
+        let dribbleTimeLeft = 15.0;
+        let isTimerRunning = false;
+
+        // Step 3 State
+        let shootSuccess = 0;
+        let shootTotal = 0;
+        let whistleTimeout = null;
+
+        /* ================= Student Info Submit ================= */
+        function submitStudentInfo() {
+            const idInput = document.getElementById('student-id-input').value.trim();
+            const nameInput = document.getElementById('student-name-input').value.trim();
+
+            if (!idInput || !nameInput) {
+                alert("학번과 이름을 모두 입력해주세요!");
+                return;
+            }
+
+            studentId = idInput;
+            studentName = nameInput;
+            initAudio();
+            goToStep(1);
+        }
+
+        /* ================= Navigation & Step Control ================= */
+        function goToStep(step) {
+            currentStep = step;
+            document.getElementById('step-0').classList.add('hidden');
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-3').classList.add('hidden');
+            
+            document.getElementById(`step-${step}`).classList.remove('hidden');
+
+            for(let i=0; i<=3; i++) {
+                const tab = document.getElementById(`step-tab-${i}`);
+                if (tab) {
+                    if (i === step) {
+                        tab.className = "flex-1 py-2 rounded-xl bg-emerald-500 text-white shadow font-black";
+                    } else {
+                        tab.className = "flex-1 py-2 rounded-xl bg-gray-200 text-gray-500";
+                    }
+                }
+            }
+        }
+
+        /* ================= STEP 1: Pass Mission ================= */
+        function addPassScore(isSuccess) {
+            initAudio();
+            if (passTotal >= 10) return;
+
+            passTotal++;
+            const banner = document.getElementById('pass-feedback-banner');
+
+            if (isSuccess) {
+                passSuccess++;
+                playSuccessTone();
+                banner.innerText = "✨ 패스 성공! 참 잘했어요!";
+                banner.className = "h-8 font-black text-lg mb-2 text-emerald-600 transition-all";
+            } else {
+                playFailSound();
+                banner.innerText = "⚠️ 아쉬워요! 다음 패스는 정확히!";
+                banner.className = "h-8 font-black text-lg mb-2 text-rose-500 transition-all";
+            }
+
+            document.getElementById('pass-success-count').innerText = passSuccess;
+            document.getElementById('pass-total-count').innerText = passTotal;
+
+            if (passTotal === 10) {
+                setTimeout(() => {
+                    evaluateStep1();
+                }, 400);
+            }
+        }
+
+        function evaluateStep1() {
+            if (passSuccess >= 8) {
+                playSuccessSound();
+                saveRecord("1단계 (패스)", `성공 (${passSuccess}/10)`);
+                alert("🎉 1단계 패스 통과! 2단계 드리블 미션으로 이동합니다!");
+                resetStep1();
+                goToStep(2);
+            } else if (passSuccess >= 6) {
+                playFailSound();
+                saveRecord("1단계 (패스)", `다시도전 (${passSuccess}/10)`);
+                showRetryModal("8번 이상 성공해야 통과입니다.<br>6~7번 성공은 <b>다시 도전!</b>");
+            } else {
+                playFailSound();
+                saveRecord("1단계 (패스)", `실패 (${passSuccess}/10)`);
+                showFailModal();
+            }
+        }
+
+        function resetStep1() {
+            passSuccess = 0;
+            passTotal = 0;
+            document.getElementById('pass-success-count').innerText = 0;
+            document.getElementById('pass-total-count').innerText = 0;
+            document.getElementById('pass-feedback-banner').innerText = "";
+        }
+
+
+        /* ================= STEP 2: Dribble Mission ================= */
+        function toggleDribbleTimer() {
+            initAudio();
+            if (!isTimerRunning) {
+                // START TIMER
+                isTimerRunning = true;
+                const btn = document.getElementById('btn-toggle-timer');
+                btn.innerText = "⏹️ 타이머 정지 (도착!)";
+                btn.className = "flex-1 bg-rose-500 hover:bg-rose-600 text-white font-black text-xl sm:text-2xl py-5 rounded-2xl border-b-4 border-rose-700 btn-touch flex items-center justify-center gap-2";
+
+                let lastTime = Date.now();
+                dribbleTimer = setInterval(() => {
+                    const now = Date.now();
+                    const delta = (now - lastTime) / 1000;
+                    lastTime = now;
+
+                    dribbleTimeLeft = Math.max(0, dribbleTimeLeft - delta);
+                    document.getElementById('dribble-timer-display').innerText = dribbleTimeLeft.toFixed(1);
+
+                    if (dribbleTimeLeft <= 0) {
+                        clearInterval(dribbleTimer);
+                        isTimerRunning = false;
+                        playFailSound();
+                        saveRecord("2단계 (드리블)", "시간초과 실패");
+                        showFailModal();
+                        resetDribbleTimer();
+                    }
+                }, 100);
+            } else {
+                // STOP TIMER & AUTOMATIC JUDGMENT
+                clearInterval(dribbleTimer);
+                isTimerRunning = false;
+
+                if (dribbleTimeLeft > 0) {
+                    playSuccessSound();
+                    saveRecord("2단계 (드리블)", `성공 (${(15.0 - dribbleTimeLeft).toFixed(1)}초 소요)`);
+                    alert(`🎉 축하합니다! ${(15.0 - dribbleTimeLeft).toFixed(1)}초 만에 지그재그 드리블 성공!\n3단계 슛 미션으로 이동합니다.`);
+                    resetDribbleTimer();
+                    goToStep(3);
+                } else {
+                    playFailSound();
+                    saveRecord("2단계 (드리블)", "시간초과 실패");
+                    showFailModal();
+                    resetDribbleTimer();
+                }
+            }
+        }
+
+        function resetDribbleTimer() {
+            clearInterval(dribbleTimer);
+            isTimerRunning = false;
+            dribbleTimeLeft = 15.0;
+            document.getElementById('dribble-timer-display').innerText = "15.0";
+            
+            const btn = document.getElementById('btn-toggle-timer');
+            btn.innerText = "▶️ 타이머 시작";
+            btn.className = "flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black text-xl sm:text-2xl py-5 rounded-2xl border-b-4 border-amber-700 btn-touch flex items-center justify-center gap-2";
+        }
+
+
+        /* ================= STEP 3: Shoot Mission ================= */
+        function prepareWhistle() {
+            initAudio();
+            if (whistleTimeout) clearTimeout(whistleTimeout);
+
+            const btn = document.getElementById('btn-whistle-wait');
+            const statusText = document.getElementById('whistle-status-text');
+            const visual = document.getElementById('whistle-visual');
+
+            btn.disabled = true;
+            btn.className = "w-full bg-slate-400 text-white font-black text-xl sm:text-2xl py-4 rounded-2xl border-b-4 border-slate-600 cursor-not-allowed flex items-center justify-center gap-2";
+            statusText.innerText = "🤫 귀를 기울이세요... 삐익 소리가 날 때까지 대기!";
+            visual.className = "text-4xl transition-transform duration-200 scale-100";
+
+            // 3초 ~ 15초 사이 완전 무작위 시간 계산
+            const randomDelaySec = Math.floor(Math.random() * 13) + 3; // 3 ~ 15
+            const randomDelayMs = randomDelaySec * 1000;
+
+            whistleTimeout = setTimeout(() => {
+                playWhistleSound();
+                visual.className = "text-4xl transition-transform duration-200 scale-150 animate-bounce";
+                statusText.innerText = "📢 삐익~! 지금 바로 뒤돌아서 슛!";
+                
+                btn.disabled = false;
+                btn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xl sm:text-2xl py-4 rounded-2xl border-b-4 border-indigo-900 btn-touch flex items-center justify-center gap-2";
+            }, randomDelayMs);
+        }
+
+        function addShootScore(isSuccess) {
+            initAudio();
+            if (shootTotal >= 5) return;
+
+            shootTotal++;
+            const banner = document.getElementById('shoot-feedback-banner');
+
+            if (isSuccess) {
+                shootSuccess++;
+                playSuccessTone();
+                banner.innerText = "⚽ 골 성공!! 완벽해요!";
+                banner.className = "h-8 font-black text-lg mb-1 text-purple-600 transition-all";
+            } else {
+                playFailSound();
+                banner.innerText = "❌ 골 실패! 다음 슛에 집중해봐요!";
+                banner.className = "h-8 font-black text-lg mb-1 text-rose-500 transition-all";
+            }
+
+            document.getElementById('shoot-success-count').innerText = shootSuccess;
+            document.getElementById('shoot-total-count').innerText = shootTotal;
+
+            if (shootTotal === 5) {
+                setTimeout(() => {
+                    evaluateStep3();
+                }, 400);
+            }
+        }
+
+        function evaluateStep3() {
+            if (shootSuccess >= 3) {
+                playSuccessSound();
+                saveRecord("3단계 (슛)", `성공 (${shootSuccess}/5)`);
+                document.getElementById('modal-clear').classList.remove('hidden');
+            } else if (shootSuccess === 2) {
+                playFailSound();
+                saveRecord("3단계 (슛)", `다시도전 (${shootSuccess}/5)`);
+                showRetryModal("3번 이상 골을 넣어야 통과입니다.<br>2번 성공은 <b>다시 도전!</b> (3단계 첫 화면으로 돌아갑니다)");
+            } else {
+                playFailSound();
+                saveRecord("3단계 (슛)", `실패 (${shootSuccess}/5)`);
+                showFailModal();
+            }
+        }
+
+        function resetStep3() {
+            shootSuccess = 0;
+            shootTotal = 0;
+            if (whistleTimeout) clearTimeout(whistleTimeout);
+
+            document.getElementById('shoot-success-count').innerText = 0;
+            document.getElementById('shoot-total-count').innerText = 0;
+            document.getElementById('shoot-feedback-banner').innerText = "";
+            document.getElementById('whistle-status-text').innerText = '"준비 및 휘슬 대기"를 누르고 삐익- 소리를 기다리세요!';
+            
+            const btn = document.getElementById('btn-whistle-wait');
+            btn.disabled = false;
+            btn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xl sm:text-2xl py-4 rounded-2xl border-b-4 border-indigo-900 btn-touch flex items-center justify-center gap-2";
+        }
+
+
+        /* ================= MODALS & HELPERS ================= */
+        function showRetryModal(msg) {
+            document.getElementById('retry-modal-msg').innerHTML = msg;
+            document.getElementById('modal-retry').classList.remove('hidden');
+        }
+
+        function closeRetryModal() {
+            document.getElementById('modal-retry').classList.add('hidden');
+            if (currentStep === 1) resetStep1();
+            if (currentStep === 3) resetStep3();
+        }
+
+        function showFailModal() {
+            document.getElementById('modal-fail').classList.remove('hidden');
+        }
+
+        function closeFailModal() {
+            document.getElementById('modal-fail').classList.add('hidden');
+            if (currentStep === 1) resetStep1();
+            if (currentStep === 2) resetDribbleTimer();
+            if (currentStep === 3) resetStep3();
+        }
+
+        function resetAllToStep1() {
+            document.getElementById('modal-clear').classList.add('hidden');
+            resetStep1();
+            resetDribbleTimer();
+            resetStep3();
+            goToStep(0);
+        }
+
+        /* ================= TEACHER RECORDS (LocalStorage) ================= */
+        function saveRecord(stageName, resultDetail) {
+            const records = JSON.parse(localStorage.getItem('soccer_records') || '[]');
+            const now = new Date();
+            const dateStr = `${now.getMonth()+1}/${now.getDate()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+            
+            const studentLabel = (studentId && studentName) ? `${studentId} ${studentName}` : "미입력";
+
+            records.push({
+                date: dateStr,
+                student: studentLabel,
+                stage: stageName,
+                result: resultDetail
+            });
+            localStorage.setItem('soccer_records', JSON.stringify(records));
+        }
+
+        function openTeacherAuthModal() {
+            document.getElementById('teacher-auth-view').classList.remove('hidden');
+            document.getElementById('teacher-dashboard-view').classList.add('hidden');
+            document.getElementById('teacher-pass-input').value = '';
+            document.getElementById('modal-teacher').classList.remove('hidden');
+        }
+
+        function checkTeacherPassword() {
+            const pwd = document.getElementById('teacher-pass-input').value;
+            if (pwd === '1234') {
+                document.getElementById('teacher-auth-view').classList.add('hidden');
+                document.getElementById('teacher-dashboard-view').classList.remove('hidden');
+                document.getElementById('teacher-dashboard-view').classList.add('flex');
+                currentRecordPage = 1;
+                renderTeacherTable();
+            } else {
+                alert('비밀번호가 올바르지 않습니다. (기본: 1234)');
+            }
+        }
+
+        function closeTeacherModal() {
+            document.getElementById('modal-teacher').classList.add('hidden');
+        }
+
+        function changeRecordPage(delta) {
+            const records = JSON.parse(localStorage.getItem('soccer_records') || '[]');
+            const totalPages = Math.ceil(records.length / recordsPerPage) || 1;
+            
+            currentRecordPage += delta;
+            if (currentRecordPage < 1) currentRecordPage = 1;
+            if (currentRecordPage > totalPages) currentRecordPage = totalPages;
+
+            renderTeacherTable();
+        }
+
+        function renderTeacherTable() {
+            const records = JSON.parse(localStorage.getItem('soccer_records') || '[]');
+            const tbody = document.getElementById('teacher-records-table');
+            tbody.innerHTML = '';
+
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400 font-bold">저장된 수행 기록이 없습니다.</td></tr>';
+                document.getElementById('record-page-info').innerText = '0 / 0 페이지';
+                document.getElementById('btn-prev-page').disabled = true;
+                document.getElementById('btn-next-page').disabled = true;
+                return;
+            }
+
+            // 최신 기록순 정렬
+            const reversedRecords = records.slice().reverse();
+            const totalPages = Math.ceil(reversedRecords.length / recordsPerPage);
+
+            if (currentRecordPage > totalPages) currentRecordPage = totalPages;
+
+            const startIndex = (currentRecordPage - 1) * recordsPerPage;
+            const pageRecords = reversedRecords.slice(startIndex, startIndex + recordsPerPage);
+
+            pageRecords.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-slate-50 font-bold";
+                tr.innerHTML = `
+                    <td class="p-2 sm:p-3 text-gray-500">${r.date}</td>
+                    <td class="p-2 sm:p-3 text-slate-800">${r.student}</td>
+                    <td class="p-2 sm:p-3 text-emerald-700">${r.stage}</td>
+                    <td class="p-2 sm:p-3 text-slate-900">${r.result}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // 페이지 조절 버튼 및 텍스트 상태 업데이트
+            document.getElementById('record-page-info').innerText = `${currentRecordPage} / ${totalPages} 페이지 (총 ${records.length}건)`;
+            document.getElementById('btn-prev-page').disabled = (currentRecordPage === 1);
+            document.getElementById('btn-next-page').disabled = (currentRecordPage === totalPages);
+        }
+
+        function exportRecordsCSV() {
+            const records = JSON.parse(localStorage.getItem('soccer_records') || '[]');
+            if (records.length === 0) {
+                alert('다운로드할 기록이 없습니다.');
+                return;
+            }
+
+            let csvStr = "\uFEFF일시,학생,단계,결과\n";
+            records.forEach(r => {
+                csvStr += `"${r.date}","${r.student}","${r.stage}","${r.result}"\n`;
+            });
+
+            const blob = new Blob([csvStr], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `축구_수행평가_기록_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function clearRecords() {
+            if (confirm('정말로 모든 학생의 수행 기록을 삭제하고 리셋하시겠습니까?\n삭제된 기록은 복구할 수 없습니다.')) {
+                localStorage.removeItem('soccer_records');
+                renderTeacherTable();
+                alert('모든 수행 기록이 성공적으로 리셋되었습니다.');
+            }
+        }
+    </script>
+</body>
+</html>
